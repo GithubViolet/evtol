@@ -1,0 +1,241 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>法务宝 CHAT</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 0;
+            background-color: #f4f6f8;
+            display: flex;
+            height: 100vh;
+        }
+        .container {
+            display: flex;
+            flex-direction: column;
+            width: 100%;
+            height: 100%;
+        }
+        header {
+            background: #34495e;
+            color: white;
+            padding: 15px;
+            text-align: center;
+            font-size: 24px;
+            font-weight: bold;
+        }
+        .chat-container {
+            display: flex;
+            flex: 1;
+            height: calc(100% - 130px);
+        }
+        .sidebar {
+            width: 300px;
+            background: #2c3e50;
+            color: white;
+            overflow-y: auto;
+        }
+        .sidebar-header {
+            padding: 15px;
+            border-bottom: 1px solid #34495e;
+            font-size: 18px;
+            font-weight: bold;
+        }
+        .history-item {
+            padding: 15px;
+            border-bottom: 1px solid #34495e;
+            cursor: pointer;
+        }
+        .history-item:hover {
+            background: #34495e;
+        }
+        .chat-main {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            background: #fff;
+        }
+        .chat-history {
+            flex: 1;
+            padding: 20px;
+            overflow-y: auto;
+        }
+        .message {
+            margin-bottom: 15px;
+        }
+        .message.user {
+            text-align: right;
+        }
+        .message.bot {
+            text-align: left;
+        }
+        .message-content {
+            display: inline-block;
+            padding: 10px 15px;
+            border-radius: 20px;
+            max-width: 70%;
+        }
+        .message.user .message-content {
+            background: #ecf0f1;
+            color: #2c3e50;
+        }
+        .message.bot .message-content {
+            background: #34495e;
+            color: white;
+        }
+        .input-area {
+            display: flex;
+            border-top: 1px solid #ddd;
+        }
+        .input-area input {
+            flex: 1;
+            padding: 15px;
+            border: none;
+            outline: none;
+            font-size: 16px;
+        }
+        .input-area button {
+            padding: 15px 20px;
+            border: none;
+            background: #34495e;
+            color: white;
+            font-size: 16px;
+            cursor: pointer;
+        }
+        .input-area button:hover {
+            background: #2c3e50;
+        }
+        .model-selector {
+            padding: 15px;
+            border-bottom: 1px solid #34495e;
+        }
+        .model-selector select {
+            width: 100%;
+            padding: 10px;
+            background: #34495e;
+            color: white;
+            border: none;
+            outline: none;
+            font-size: 16px;
+            cursor: pointer;
+        }
+    </style>
+</head>
+<body>
+<div class="container">
+    <header>法务宝 CHAT</header>
+    <div class="chat-container">
+        <div class="sidebar">
+            <div class="sidebar-header">对话历史</div>
+            <div class="model-selector">
+                <select>
+                    <option value="model1">法律咨询模型 v1</option>
+                    <option value="model2">合同审查模型 v2</option>
+                    <option value="model3">知识产权分析模型 v3</option>
+                </select>
+            </div>
+            <div class="history-item">合同纠纷案例解析 (2024-12-01)</div>
+            <div class="history-item">劳动法相关条款解读 (2024-12-28)</div>
+            <div class="history-item">商标注册流程咨询 (2024-12-25)</div>
+            <div class="history-item">企业合规性审查报告 (2024-12-20)</div>
+        </div>
+        <div class="chat-main">
+            <div class="chat-history">
+                <div class="message bot">
+                    <div class="message-content">
+                        您好，我是法务宝 AI 助手。您可以向我咨询合同、劳动法、知识产权等相关问题，我会为您提供专业的解答。
+                    </div>
+                </div>
+            </div>
+            <div class="input-area">
+                <input type="text" placeholder="输入您的问题...">
+                <button>发送</button>
+            </div>
+        </div>
+    </div>
+</div>
+<script>
+    // 初始化聊天历史记录
+    const chatHistory = document.querySelector('.chat-history');
+    const inputField = document.querySelector('.input-area input');
+    const sendButton = document.querySelector('.input-area button');
+
+    // 阿里云百炼API配置
+    const API_KEY = 'sk-7ac7800a8e0a4db0860cc3640f1ebb09'; // 替换为新的API密钥
+    const API_URL = 'https://dashscope.aliyuncs.com/compatible-mode/v1'; // API URL
+
+    // 发送问题并获取AI回答
+    async function askAI(question) {
+        addMessage('user', question);
+
+        try {
+            const response = await fetch(API_URL, {
+                method: 'POST',
+                headers: {
+                    'Authorization': `Bearer ${API_KEY}`,
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({
+                    model: 'qwen-plus', // 使用的模型
+                    messages: [
+                        { role: 'system', content: 'You are a helpful assistant.' },
+                        { role: 'user', content: question }
+                    ],
+                    max_tokens: 100 // 控制回答长度
+                })
+            });
+
+            // 打印响应状态码和内容
+            console.log('Response Status:', response.status);
+            const data = await response.json();
+            console.log('API Response:', data);
+
+            if (data.choices && data.choices.length > 0) {
+                const aiResponse = data.choices[0].message.content.trim();
+                addMessage('bot', aiResponse);
+            } else {
+                addMessage('bot', '抱歉，无法回答你的问题。');
+            }
+        } catch (error) {
+            console.error('Error fetching AI response:', error);
+            addMessage('bot', '抱歉，服务器暂时不可用，请稍后再试。');
+        }
+    }
+
+    // 添加消息到聊天历史
+    function addMessage(sender, content) {
+        const messageDiv = document.createElement('div');
+        messageDiv.classList.add('message', sender);
+
+        const messageContent = document.createElement('div');
+        messageContent.classList.add('message-content');
+        messageContent.textContent = content;
+
+        messageDiv.appendChild(messageContent);
+        chatHistory.appendChild(messageDiv);
+
+        // 滚动到底部
+        chatHistory.scrollTop = chatHistory.scrollHeight;
+    }
+
+    // 绑定发送按钮事件
+    sendButton.addEventListener('click', () => {
+        const userQuestion = inputField.value.trim();
+        if (userQuestion) {
+            askAI(userQuestion);
+            inputField.value = ''; // 清空输入框
+        }
+    });
+
+    // 支持按下回车键发送消息
+    inputField.addEventListener('keypress', (event) => {
+        if (event.key === 'Enter') {
+            sendButton.click();
+        }
+    });
+</script>
+</body>
+</html>
